@@ -1,0 +1,46 @@
+version: "3.7"
+services:
+  container_name: #任意の名前を付ける。
+    image: postgres:11
+
+    #env_file: #環境変数の設定が必要な場合は、このファイルを作って、そこに記述する
+      #- environment.env
+
+    deploy:
+      resources: #リソースの制限
+        limits: #CPU,メモリの上限設定
+          cpus: '0.50'
+          memory: 50M
+        reservations: #CPU,メモリの上限設定
+          cpus: '0.25'
+          memory: 25M
+
+    logging:
+      #大量にログをはくコンテナだと、平気で30Gとか使ってくるから許容できる範囲を計算する
+      driver: json-file #json-file(default),syslog,none
+      options:
+        max-file: "10"
+        max-size: "200k"
+    volumes: #docker for windows環境では、マウント対象の権限に注意が必要
+      - postgres-db:/var/lib/postgresql/data
+
+    networks:
+      postgres-nw:
+
+    ports:
+      - 5432:5432 #host:container
+
+###
+volumes:
+  postgres-db: #Volumeの名前を設定する
+    #docker-composeで管理しているVolumeを利用する→false
+    #そうでない（Dockerコマンドで別作成したVolumeを利用する）→true
+    #注意：falseの場合、docker-compose downしたときに、コンテナと一緒に削除される
+    external: false
+    #あらかじめ作る場合：docker volume create <volume name>
+
+###
+networks:
+  postgres-nw: #ネットワークの名前を指定
+    external: false
+    #あらかじめ作る場合：docker network create <network name>

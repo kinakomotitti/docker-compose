@@ -1,0 +1,62 @@
+version: "3.7"
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    environment: 
+      - discovery.type=single-node
+    logging:
+      driver: json-file
+      options:
+        max-file: "5"
+        max-size: "200k"
+    networks:
+      elastic-nw:
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.1.1
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    logging:
+      driver: json-file 
+      options:
+        max-file: "5"
+        max-size: "200k"
+    depends_on:
+      - elasticsearch
+    networks:
+      elastic-nw:
+    ports:
+      - 5601:5601
+
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.1.1
+    logging:
+      driver: json-file 
+      options:
+        max-file: "5"
+        max-size: "200k"
+    depends_on:
+      - elasticsearch
+    networks:
+      elastic-nw:
+
+  setup_metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.1.1
+    volumes:
+      - .\mnt:/mnt
+    command:
+      - /mnt/wait.bash
+      - metricbeat setup
+    depends_on:
+      - elasticsearch
+      - kibana
+      - metricbeat
+    networks:
+      elastic-nw:
+###
+networks:
+  elastic-nw:
+    external: false
